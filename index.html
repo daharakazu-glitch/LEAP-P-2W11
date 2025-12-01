@@ -1,886 +1,1015 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Taiwan School Trip - Comparatives & Trivia Challenge</title>
-    <!-- Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Lucide Icons -->
-    <script src="https://unpkg.com/lucide@latest"></script>
-    <style>
-        /* Custom Animations */
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-        .animate-fade-in {
-            animation: fadeIn 0.5s ease-out forwards;
-        }
-        .animate-pulse-slow {
-            animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-        }
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        }
-        /* Custom scrollbar for webkit */
-        ::-webkit-scrollbar {
-            width: 8px;
-        }
-        ::-webkit-scrollbar-track {
-            background: #f1f1f1; 
-        }
-        ::-webkit-scrollbar-thumb {
-            background: #cbd5e1; 
-            border-radius: 4px;
-        }
-        ::-webkit-scrollbar-thumb:hover {
-            background: #94a3b8; 
-        }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LEAP 学習アプリ (Part 2 Week 11)</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700&family=Tinos:wght@700&display=swap');
+body {
+background-color: #007BFF; /* ビビットなブルー */
+font-family: 'Noto Sans JP', sans-serif;
+}
+
+/* 英語フォントをTimes New Romanに設定 */
+.font-english {
+font-family: 'Tinos', 'Times New Roman', serif;
+font-weight: 700;
+font-size: 1.25rem; /* 20px */
+line-height: 1.75rem; /* 28px */
+}
+
+.answer-span {
+color: #DC2626; /* 赤色 */
+font-weight: 700;
+display: none;
+}
+
+.underline-span {
+text-decoration: underline;
+text-underline-offset: 4px;
+display: inline;
+}
+
+.show-answer .answer-span {
+display: inline;
+}
+
+.show-answer .underline-span {
+display: none;
+}
+.explanation {
+display: none;
+white-space: pre-wrap;
+}
+
+.btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 10px 20px;
+    border-radius: 8px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.2s ease-in-out;
+}
+.btn-primary {
+    background-color: #3b82f6;
+    color: white;
+}
+.btn-primary:hover {
+    background-color: #2563eb;
+}
+.btn-secondary {
+    background-color: #6b7280;
+    color: white;
+}
+.btn-secondary:hover {
+    background-color: #4b5563;
+}
+
+</style>
 </head>
-<body class="bg-gray-50 text-gray-800 h-screen w-full overflow-hidden">
+<body class="text-gray-800">
 
-    <div id="app" class="h-full w-full overflow-y-auto">
-        <!-- Content will be injected here by JavaScript -->
+<div id="app-container" class="container mx-auto p-4 md:p-8 max-w-4xl">
+<header class="text-center mb-8 bg-blue-500 p-4 rounded-xl shadow-lg">
+<h1 class="text-2xl md:text-3xl font-bold text-white">LEAP 学習アプリ</h1>
+<h2 id="app-subtitle" class="text-xl md:text-2xl font-bold text-white">Part 2 Week 11（No.843-881）</h2>
+</header>
+
+<main class="bg-white/90 backdrop-blur-sm p-6 rounded-xl shadow-lg mb-28">
+<div class="flex justify-end mb-6">
+    <button id="start-quiz-btn" class="bg-purple-500 hover:bg-purple-600 text-white font-bold py-2 px-4 rounded-lg shadow transition-transform transform hover:scale-105">
+    ランダムテスト
+    </button>
+</div>
+
+<div class="mb-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
+    <h3 class="font-bold text-lg mb-2">選択した問題でPDFを作成</h3>
+    <p class="text-gray-600 mb-4">学習したい問題のチェックボックスを選択してから、下のボタンを押してください。</p>
+    <div class="flex items-center mb-4">
+        <input type="checkbox" id="select-all-checkbox" class="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500">
+        <label for="select-all-checkbox" class="ml-2 block text-sm text-gray-900">すべて選択 / 解除</label>
     </div>
+    <div class="flex justify-center">
+        <button id="open-pdf-modal-btn" class="w-full sm:w-auto bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded-lg shadow transition-transform transform hover:scale-105">PDFダウンロードの種類を選択</button>
+    </div>
+</div>
 
-    <script>
-        // --- 1. Data & State Management ---
 
-        // Levenshtein Distance Algorithm
-        const calculateSimilarity = (str1, str2) => {
-            const s1 = str1.toLowerCase().replace(/[^a-z0-9\s]/g, '').trim();
-            const s2 = str2.toLowerCase().replace(/[^a-z0-9\s]/g, '').trim();
-            
-            if (s1 === s2) return 1.0;
-            if (s1.length === 0) return 0.0;
-            if (s2.length === 0) return 0.0;
+<div id="sentence-list" class="space-y-6">
+<!-- Sentences will be populated by JS -->
+</div>
+</main>
+</div>
 
-            const track = Array(s2.length + 1).fill(null).map(() =>
-                Array(s1.length + 1).fill(null));
+<!-- Control Panel -->
+<div id="control-panel" class="fixed bottom-0 left-0 right-0 bg-white/80 backdrop-blur-md p-4 border-t-2 border-gray-200 shadow-2xl flex justify-center items-center space-x-2 md:space-x-4">
+<button id="toggle-answer-btn" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded-lg shadow-md transition-transform transform hover:scale-105">表示/非表示</button>
+<button id="play-sound-btn" class="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded-lg shadow-md transition-transform transform hover:scale-105">音声再生</button>
+<button id="record-btn" class="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded-lg shadow-md transition-transform transform hover:scale-105">録音評価</button>
+<button id="toggle-explanation-btn" class="bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-2 px-4 rounded-lg shadow-md transition-transform transform hover:scale-105">語の意味</button>
+</div>
 
-            for (let i = 0; i <= s1.length; i += 1) track[0][i] = i;
-            for (let j = 0; j <= s2.length; j += 1) track[j][0] = j;
+<!-- Message/Score Modal -->
+<div id="message-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
+<div id="message-content" class="bg-white p-8 rounded-lg shadow-xl text-center">
+<!-- Message content will be populated by JS -->
+</div>
+</div>
+<!-- Quiz Modal -->
+<div id="quiz-modal" class="hidden fixed inset-0 bg-black bg-opacity-60 flex justify-center items-center z-40 p-4">
+<div class="bg-white w-full max-w-2xl p-8 rounded-2xl shadow-2xl relative">
+<button id="close-quiz-btn" class="absolute top-4 right-4 text-gray-500 hover:text-gray-800 text-3xl font-bold">&times;</button>
+<div id="quiz-content">
+<!-- Quiz content will be populated by JS -->
+</div>
+</div>
+</div>
 
-            for (let j = 1; j <= s2.length; j += 1) {
-                for (let i = 1; i <= s1.length; i += 1) {
-                    const indicator = s1[i - 1] === s2[j - 1] ? 0 : 1;
-                    track[j][i] = Math.min(
-                        track[j][i - 1] + 1,
-                        track[j - 1][i] + 1,
-                        track[j - 1][i - 1] + indicator,
-                    );
-                }
-            }
+<!-- PDF Download Modal -->
+<div id="pdf-modal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full flex items-center justify-center z-50">
+    <div class="relative mx-auto p-5 border w-11/12 md:w-1/2 lg:w-1/3 shadow-lg rounded-md bg-white">
+        <div class="mt-3 text-center">
+            <h3 class="text-lg leading-6 font-medium text-gray-900">ダウンロードするPDFの種類を選択</h3>
+            <div class="mt-4 px-7 py-3 space-y-3">
+                <button id="download-list-btn" class="btn btn-primary w-full justify-start">1. 完全な単語のリスト</button>
+                <button id="download-en-quiz-btn" class="btn btn-primary w-full justify-start">2. 英語の単語を解答する問題</button>
+                <button id="download-ja-quiz-btn" class="btn btn-primary w-full justify-start">3. 単語の日本語訳を解答する問題</button>
+                <button id="download-mixed-quiz-btn" class="btn btn-primary w-full justify-start">4. 英語と日本語が混在した問題</button>
+                <button id="download-sentence-quiz-btn" class="btn btn-primary w-full justify-start">5. 例文の穴埋め問題</button>
+                <button id="download-sentence-mixed-quiz-btn" class="btn btn-primary w-full justify-start">6. 例文の混合問題 (穴埋め/和訳)</button>
+            </div>
+            <div class="items-center px-4 py-3">
+                <button id="close-modal-btn" class="btn btn-secondary w-full">キャンセル</button>
+            </div>
+        </div>
+    </div>
+</div>
 
-            const distance = track[s2.length][s1.length];
-            const maxLength = Math.max(s1.length, s2.length);
-            return 1 - (distance / maxLength);
-        };
+<script>
+// --- App State ---
+// 提供されたデータに基づく新しいリスト (Part 2 Week 11, No.843-881)
+const chapterData = [
+    { id: "843", answer: "somewhat", explanation: "[副] いくぶん，多少", en: "somewhat different", ja: "いくぶん違う" },
+    { id: "844", answer: "somehow", explanation: "[副] どうにかして，どういうわけか", en: "somehow finish the work", ja: "どうにかして仕事を終える" },
+    { id: "845", answer: "otherwise", explanation: "[副] ①さもなければ　②その他の点では", en: "Hurry up, otherwise you’ll be late.", ja: "急ぎなさい，さもないと遅れるよ．" },
+    { id: "846", answer: "nevertheless", explanation: "[副] それにもかかわらず", en: "He is rich; nevertheless he is unhappy.", ja: "彼は金持ちだ，それにもかかわらず不幸だ．" },
+    { id: "847", answer: "nonetheless", explanation: "[副] それにもかかわらず", en: "The book is long but nonetheless interesting.", ja: "その本は長いが，それでも（それにもかかわらず）面白い．" },
+    { id: "848", answer: "furthermore", explanation: "[副] その上，さらに", en: "It is cheap, and furthermore it is light.", ja: "それは安いし，その上軽い．" },
+    { id: "849", answer: "moreover", explanation: "[副] その上，さらに", en: "He is young, and moreover he is handsome.", ja: "彼は若いし，その上ハンサムだ．" },
+    { id: "850", answer: "thus", explanation: "[副] したがって，このように", en: "Thus, he succeeded.", ja: "したがって，彼は成功した．" },
+    { id: "851", answer: "therefore", explanation: "[副] それゆえに，したがって", en: "I think, therefore I am.", ja: "我思う，ゆえに我あり．" },
+    { id: "852", answer: "despite", explanation: "[前] ～にもかかわらず", en: "despite the bad weather", ja: "悪天候にもかかわらず" },
+    { id: "853", answer: "unlike", explanation: "[前] ～と違って", en: "Unlike me, he is tall.", ja: "私と違って彼は背が高い．" },
+    { id: "854", answer: "instead", explanation: "[副] その代わりに", en: "I’ll go there instead.", ja: "その代わりに私がそこへ行きます．" },
+    { id: "855", answer: "provided", explanation: "[接] （that S V）もし～ならば", en: "provided (that) you agree", ja: "もしあなたが同意するならば" },
+    { id: "856", answer: "unless", explanation: "[接] ～でない限り，もし～なければ", en: "unless it rains", ja: "雨が降らない限り" },
+    { id: "857", answer: "whether", explanation: "[接] （～ or ...）～か…か", en: "whether you like it or not", ja: "あなたがそれを好きかどうかにかかわらず" },
+    { id: "858", answer: "nor", explanation: "[接] （neither A nor B）AでもBでもない", en: "Neither Tom nor I know him.", ja: "トムも私も彼を知らない．" },
+    { id: "859", answer: "whatever", explanation: "[代] ①～するもの（こと）は何でも　②どんなもの（こと）が～しようとも", en: "Do whatever you like.", ja: "好きなことは何でもしなさい．" },
+    { id: "860", answer: "whichever", explanation: "[代] ①～するどちらでも　②どちらが～しようとも", en: "Take whichever you like.", ja: "好きな方をどちらでも取りなさい．" },
+    { id: "861", answer: "wherever", explanation: "[接] ～するところならどこでも", en: "Sit wherever you like.", ja: "好きなところならどこでも座りなさい．" },
+    { id: "862", answer: "whoever", explanation: "[代] ①～する人は誰でも　②誰が～しようとも", en: "Whoever comes is welcome.", ja: "来る人は誰でも歓迎します．" },
+    { id: "863", answer: "cause", explanation: "[名] ①原因　[他] ②～を引き起こす", en: "the cause of the fire", ja: "火事の原因" },
+    { id: "864", answer: "effect", explanation: "[名] ①効果，影響　②結果", en: "cause and effect", ja: "原因と結果" },
+    { id: "865", answer: "result", explanation: "[名] ①結果　[自] ②（from ～）（～から）生じる，（in ～）（～という）結果になる", en: "as a result of the war", ja: "戦争の結果として" },
+    { id: "866", answer: "reason", explanation: "[名] 理由，理性", en: "for some reason", ja: "何らかの理由で" },
+    { id: "867", answer: "purpose", explanation: "[名] 目的", en: "on purpose", ja: "わざと（目的を持って）" },
+    { id: "868", answer: "sense", explanation: "[名] ①感覚　②意味", en: "make sense", ja: "理にかなう（意味をなす）" },
+    { id: "869", answer: "way", explanation: "[名] ①道　②方法", en: "in a way", ja: "ある意味では" },
+    { id: "870", answer: "kind", explanation: "[名] 種類", en: "a kind of flower", ja: "一種の花" },
+    { id: "871", answer: "during", explanation: "[前] ～の間", en: "during the summer vacation", ja: "夏休みの間" },
+    { id: "872", answer: "until", explanation: "[前] [接] ～まで（ずっと）", en: "until five o'clock", ja: "5時まで（ずっと）" },
+    { id: "873", answer: "till", explanation: "[前] [接] ～まで（ずっと）", en: "wait till he comes", ja: "彼が来るまで待つ" },
+    { id: "874", answer: "within", explanation: "[前] ～以内で［に］", en: "within a week", ja: "1週間以内に" },
+    { id: "875", answer: "without", explanation: "[前] ～なしで", en: "coffee without sugar", ja: "砂糖なしのコーヒー" },
+    { id: "876", answer: "except", explanation: "[前] ～を除いて", en: "everyone except me", ja: "私以外の全員" },
+    { id: "877", answer: "beside", explanation: "[前] ～のそばに", en: "sit beside him", ja: "彼のそばに座る" },
+    { id: "878", answer: "besides", explanation: "[前] ①～に加えて　[副] ②その上", en: "Besides English, he speaks French.", ja: "英語に加えて，彼はフランス語も話す．" },
+    { id: "879", answer: "behind", explanation: "[前] ①～の後ろに　②～に遅れて", en: "behind the door", ja: "ドアの後ろに" },
+    { id: "880", answer: "between", explanation: "[前] （2つの）間に［で］", en: "between you and me", ja: "ここだけの話だが（あなたと私の間で）" },
+    { id: "881", answer: "among", explanation: "[前] （3つ以上の）間に［で］", en: "among the students", ja: "生徒たちの間で" }
+];
 
-        const questions = [
-            {
-                id: 1,
-                category: "Landmarks",
-                question: "台北101と東京タワーの高さを比べてみましょう。",
-                japanese: "台北101は東京タワーよりも高い。",
-                sentencePart1: "Taipei 101 is ",
-                sentencePart2: " Tokyo Tower.",
-                fullSentence: "Taipei 101 is taller than Tokyo Tower.",
-                correctAnswer: "taller than",
-                options: ["taller than", "as tall as", "the tallest", "more tall than"],
-                grammarPoint: "比較級 (Lesson 11-1)",
-                grammarExplanation: "「AはBよりも〜だ」は <形容詞の比較級 + than> です。",
-                trivia: "【トリビア】台北101(508m)はかつて世界一高いビルでした。高速エレベーターは日本の東芝製です。",
-                link: "https://www.taipei-101.com.tw/jp/",
-                linkText: "台北101 公式サイト"
-            },
-            {
-                id: 2,
-                category: "Transportation",
-                question: "台湾の新幹線(HSR)と日本の新幹線のスピード。",
-                japanese: "台湾新幹線は、日本の新幹線と同じくらいの速さで走ります。",
-                sentencePart1: "The Taiwan High Speed Rail runs ",
-                sentencePart2: " the Japanese Shinkansen.",
-                fullSentence: "The Taiwan High Speed Rail runs as fast as the Japanese Shinkansen.",
-                correctAnswer: "as fast as",
-                options: ["as fast as", "fast than", "fastest", "faster as"],
-                grammarPoint: "原級 (Lesson 11-1)",
-                grammarExplanation: "「AはBと同じくらい〜だ」は <as + 形容詞/副詞の原級 + as> です。",
-                trivia: "【トリビア】台湾新幹線の車両(700T型)は日本の700系がベース。乗り心地も車内販売も日本そっくり！",
-                link: "https://jp.thsrc.com.tw/",
-                linkText: "台湾高速鉄道 (公式サイト)"
-            },
-            {
-                id: 3,
-                category: "Geography",
-                question: "台湾最高峰「玉山（Yushan）」について。",
-                japanese: "玉山は台湾で最も高い山です。",
-                sentencePart1: "Mt. Jade (Yushan) is ",
-                sentencePart2: " mountain in Taiwan.",
-                fullSentence: "Mt. Jade (Yushan) is the highest mountain in Taiwan.",
-                correctAnswer: "the highest",
-                options: ["the highest", "higher than", "the most high", "as high as"],
-                grammarPoint: "最上級 (Lesson 11-2)",
-                grammarExplanation: "「最も〜だ」は <the + 形容詞の最上級> です。",
-                trivia: "【トリビア】標高3,952m。富士山(3,776m)より高く、北東アジア最高峰です。",
-                link: "https://www.taipeinavi.com/miru/448/",
-                linkText: "玉山国家公園 (台北ナビ)"
-            },
-            {
-                id: 4,
-                category: "Culture",
-                question: "コンビニの密度比較。",
-                japanese: "台湾のコンビニの密度は、日本のそれ（密度）よりも高い。",
-                sentencePart1: "The density of convenience stores in Taiwan is ",
-                sentencePart2: " Japan.",
-                fullSentence: "The density of convenience stores in Taiwan is higher than that of Japan.",
-                correctAnswer: "higher than that of",
-                options: ["higher than that of", "higher than", "high as", "the highest of"],
-                grammarPoint: "比較対象の明示 (Lesson 11-1)",
-                grammarExplanation: "比較対象を揃えるため、the density の代わりに代名詞 that を使います。",
-                trivia: "【トリビア】人口あたりのコンビニ数は世界トップクラス。独自のレシート宝くじも人気です。",
-                link: "https://jp.taiwan.net.tw/",
-                linkText: "台湾観光庁 (基本情報)"
-            },
-            {
-                id: 5,
-                category: "Food",
-                question: "小籠包のおいしさ。",
-                japanese: "私にとって、小籠包ほどおいしいものはありません。",
-                sentencePart1: "To me, ",
-                sentencePart2: " Xiao Long Bao.",
-                fullSentence: "To me, nothing is more delicious than Xiao Long Bao.",
-                correctAnswer: "nothing is more delicious than",
-                options: ["nothing is more delicious than", "anything is more delicious than", "nothing is delicious as", "most things are more delicious than"],
-                grammarPoint: "最上級相当表現 (Lesson 11-2)",
-                grammarExplanation: "「〜ほど…なものはない」は <Nothing is 比較級 + than> で表します。",
-                trivia: "【トリビア】有名店「鼎泰豊」では、職人がひだの数（18浮）まで正確に作っています。",
-                link: "https://www.dintaifung.com.tw/jp/",
-                linkText: "鼎泰豊（ディンタイフォン）公式サイト"
-            },
-            {
-                id: 6,
-                category: "Sightseeing",
-                question: "故宮博物院について。",
-                japanese: "故宮博物院は、世界で最も有名な博物館の一つです。",
-                sentencePart1: "The National Palace Museum is ",
-                sentencePart2: " museums in the world.",
-                fullSentence: "The National Palace Museum is one of the most famous museums in the world.",
-                correctAnswer: "one of the most famous",
-                options: ["one of the most famous", "one of the famous", "the most famous", "more famous than"],
-                grammarPoint: "最上級の重要構文 (Lesson 11-2)",
-                grammarExplanation: "<one of the + 最上級 + 複数名詞> で「最も〜なものの一つ」を表します。",
-                trivia: "【トリビア】「白菜」と「角煮」の形をした石の彫刻が大人気です。",
-                link: "https://www.npm.gov.tw/",
-                linkText: "国立故宮博物院 (公式サイト)"
-            },
-            {
-                id: 7,
-                category: "Weather",
-                question: "九份の天気。",
-                japanese: "九份では、台北よりも頻繁に雨が降ります。",
-                sentencePart1: "It rains ",
-                sentencePart2: " in Jiufen than in Taipei.",
-                fullSentence: "It rains more often in Jiufen than in Taipei.",
-                correctAnswer: "more often",
-                options: ["more often", "as often", "many often", "most often"],
-                grammarPoint: "副詞の比較級 (Lesson 11-1)",
-                grammarExplanation: "often の比較級は more often です。",
-                trivia: "【トリビア】山間部の九份は雨が多いですが、雨の日の提灯の明かりはとても幻想的です。",
-                link: "https://www.taipeinavi.com/miru/20/",
-                linkText: "九份（ジォウフェン）観光ガイド"
-            },
-            {
-                id: 8,
-                category: "Travel Tip",
-                question: "知れば知るほど...。",
-                japanese: "台湾について知れば知るほど、ますます行きたくなるでしょう。",
-                sentencePart1: "The more you know about Taiwan, ",
-                sentencePart2: " you will want to go.",
-                fullSentence: "The more you know about Taiwan, the more you will want to go.",
-                correctAnswer: "the more",
-                options: ["the more", "the most", "more", "as many"],
-                grammarPoint: "The+比較級, the+比較級 (Lesson 11-1)",
-                grammarExplanation: "「〜すればするほど、ますます…だ」という構文です。",
-                trivia: "【トリビア】台湾の人々はとても親日的。道に迷っていると助けてくれることも多いです。",
-                link: "https://jp.taiwan.net.tw/",
-                linkText: "台湾観光庁 (公式)"
-            },
-            {
-                id: 9,
-                category: "Night Market",
-                question: "士林夜市（Shilin Night Market）の大きさ。",
-                japanese: "士林夜市は台北で最も大きな夜市です。",
-                sentencePart1: "Shilin Night Market is ",
-                sentencePart2: " night market in Taipei.",
-                fullSentence: "Shilin Night Market is the largest night market in Taipei.",
-                correctAnswer: "the largest",
-                options: ["the largest", "larger than", "as large as", "the most large"],
-                grammarPoint: "最上級 (Lesson 11-2)",
-                grammarExplanation: "large の最上級は largest です。特定の範囲（in Taipei）での一番を表します。",
-                trivia: "【トリビア】巨大フライドチキン（豪大大鶏排）は顔より大きいサイズで有名です！",
-                link: "https://www.taipeinavi.com/food/26/",
-                linkText: "士林夜市 ガイド"
-            },
-            {
-                id: 10,
-                category: "Food",
-                question: "臭豆腐（Stinky Tofu）の匂いと味。",
-                japanese: "臭豆腐は、匂いほど味は悪くありません。",
-                sentencePart1: "Stinky Tofu does not taste ",
-                sentencePart2: " it smells.",
-                fullSentence: "Stinky Tofu does not taste as bad as it smells.",
-                correctAnswer: "as bad as",
-                options: ["as bad as", "worse than", "badder than", "worst"],
-                grammarPoint: "原級の否定 (Lesson 11-1)",
-                grammarExplanation: "<not as + 原級 + as> で「〜ほど…ではない」を表します。",
-                trivia: "【トリビア】匂いは強烈ですが、味は厚揚げに似ていて香ばしいです。台湾人のソウルフード。",
-                link: "https://jp.taiwan.net.tw/m1.aspx?sNo=0003019",
-                linkText: "台湾観光庁 (台湾グルメ)"
-            },
-            {
-                id: 11,
-                category: "Drink",
-                question: "タピオカミルクティー（Bubble Tea）の人気。",
-                japanese: "タピオカミルクティーは、台湾で最も人気のある飲み物の一つです。",
-                sentencePart1: "Bubble Tea is ",
-                sentencePart2: " drinks in Taiwan.",
-                fullSentence: "Bubble Tea is one of the most popular drinks in Taiwan.",
-                correctAnswer: "one of the most popular",
-                options: ["one of the most popular", "more popular than", "the most popular", "as popular as"],
-                grammarPoint: "最上級 (Lesson 11-2)",
-                grammarExplanation: "<one of the + 最上級 + 複数名詞>。drink に s をつけるのを忘れずに。",
-                trivia: "【トリビア】台湾発祥のドリンク。現地では砂糖の量や氷の量を細かくカスタマイズできます。",
-                link: "https://www.chunshuitang.com.tw/",
-                linkText: "春水堂（チュンスイタン）公式サイト"
-            },
-            {
-                id: 12,
-                category: "Nature",
-                question: "太魯閣（Taroko）峡谷の景色。",
-                japanese: "その景色は、私が想像していたよりもはるかに美しい。",
-                sentencePart1: "The scenery is ",
-                sentencePart2: " I imagined.",
-                fullSentence: "The scenery is much more beautiful than I imagined.",
-                correctAnswer: "much more beautiful than",
-                options: ["much more beautiful than", "more beautiful than", "as beautiful as", "very beautiful than"],
-                grammarPoint: "比較級の強調 (Lesson 11-1)",
-                grammarExplanation: "比較級を強めるには much や far を使います（veryは使えません）。",
-                trivia: "【トリビア】大理石の断崖絶壁が続く絶景スポット。ヘルメットをかぶって見学する場所もあります。",
-                link: "https://www.taroko.gov.tw/ja/",
-                linkText: "太魯閣国家公園 (公式サイト)"
-            },
-            {
-                id: 13,
-                category: "History",
-                question: "古都・台南（Tainan）と台北（Taipei）の歴史。",
-                japanese: "台南は台北よりも歴史が古いです。",
-                sentencePart1: "Tainan is ",
-                sentencePart2: " Taipei.",
-                fullSentence: "Tainan is older than Taipei.",
-                correctAnswer: "older than",
-                options: ["older than", "old than", "more old than", "the oldest"],
-                grammarPoint: "比較級 (Lesson 11-1)",
-                grammarExplanation: "old の比較級は older です。",
-                trivia: "【トリビア】台南は台湾最古の都市で、「台湾の京都」とも呼ばれる美食と歴史の街です。",
-                link: "https://www.twtainan.net/ja",
-                linkText: "台南旅遊網 (公式)"
-            },
-            {
-                id: 14,
-                category: "Traffic",
-                question: "台湾のスクーター（Scooters）の多さ。",
-                japanese: "いくつかの地域では、スクーターは車よりも一般的です。",
-                sentencePart1: "Scooters are ",
-                sentencePart2: " cars in some areas.",
-                fullSentence: "Scooters are more common than cars in some areas.",
-                correctAnswer: "more common than",
-                options: ["more common than", "commoner than", "as common as", "the most common"],
-                grammarPoint: "比較級 (Lesson 11-1)",
-                grammarExplanation: "common の比較級は more common を使うのが一般的です。",
-                trivia: "【トリビア】朝の通勤ラッシュ時の「スクーターの滝（台北橋）」は圧巻の光景です。",
-                link: "https://jp.taiwan.net.tw/",
-                linkText: "台湾観光庁 (基本情報)"
-            },
-            {
-                id: 15,
-                category: "Food",
-                question: "マンゴーかき氷（Mango Shaved Ice）。",
-                japanese: "夏には、マンゴーかき氷ほどリフレッシュできるデザートはありません。",
-                sentencePart1: "In summer, ",
-                sentencePart2: " is as refreshing as mango shaved ice.",
-                fullSentence: "In summer, no other dessert is as refreshing as mango shaved ice.",
-                correctAnswer: "no other dessert",
-                options: ["no other dessert", "any other dessert", "nothing dessert", "some dessert"],
-                grammarPoint: "最上級相当表現 (Lesson 11-2)",
-                grammarExplanation: "<No other + 単数名詞 + is as ... as ~> で「〜ほど…なものはない（一番…だ）」を表します。",
-                trivia: "【トリビア】台湾のマンゴーは非常に甘く、氷自体に味のついた「雪花冰」はふわふわです。",
-                link: "https://www.taipeinavi.com/food/364/",
-                linkText: "ICE MONSTER (台北ナビ)"
-            },
-            {
-                id: 16,
-                category: "Festival",
-                question: "ランタンフェスティバル（Sky Lanterns）。",
-                japanese: "空飛ぶランタンは、星と同じくらい明るく見えます。",
-                sentencePart1: "The sky lanterns look ",
-                sentencePart2: " stars.",
-                fullSentence: "The sky lanterns look as bright as stars.",
-                correctAnswer: "as bright as",
-                options: ["as bright as", "brighter than", "the brightest", "so bright as"],
-                grammarPoint: "原級 (Lesson 11-1)",
-                grammarExplanation: "「〜と同じくらい明るい」は as bright as です。",
-                trivia: "【トリビア】平渓（ピンシー）では願い事を書いたランタンを空に飛ばす体験ができます。",
-                link: "https://tour.ntpc.gov.tw/ja-jp/",
-                linkText: "新北市観光旅遊網 (公式)"
-            },
-            {
-                id: 17,
-                category: "MRT",
-                question: "地下鉄（MRT）のルール。",
-                japanese: "台北のMRTは、他の多くの国の地下鉄よりも清潔です。",
-                sentencePart1: "The Taipei MRT is ",
-                sentencePart2: " subways in many other countries.",
-                fullSentence: "The Taipei MRT is cleaner than subways in many other countries.",
-                correctAnswer: "cleaner than",
-                options: ["cleaner than", "cleanest", "as clean as", "more clean than"],
-                grammarPoint: "比較級 (Lesson 11-1)",
-                grammarExplanation: "clean の比較級は cleaner です。",
-                trivia: "【トリビア】MRT構内・車内は飲食厳禁（ガムや水もNG）。違反すると罰金があるため、非常に清潔です。",
-                link: "https://m.metro.taipei/jp/",
-                linkText: "台北メトロ (公式サイト)"
-            },
-            {
-                id: 18,
-                category: "Economy",
-                question: "半導体産業（Semiconductors）。",
-                japanese: "TSMCは、世界で最も重要な企業の一つです。",
-                sentencePart1: "TSMC is one of ",
-                sentencePart2: " companies in the world.",
-                fullSentence: "TSMC is one of the most important companies in the world.",
-                correctAnswer: "the most important",
-                options: ["the most important", "more important", "important", "most important"],
-                grammarPoint: "最上級 (Lesson 11-2)",
-                grammarExplanation: "important のような長い単語の最上級は the most important です。",
-                trivia: "【トリビア】台湾は半導体製造の世界的な中心地。スマホやPCの心臓部は台湾製かもしれません。",
-                link: "https://semiconedu.com/tsmc/",
-                linkText: "TSMCとは？ (解説サイト)"
-            },
-            {
-                id: 19,
-                category: "Activity",
-                question: "足つぼマッサージ（Foot Massage）。",
-                japanese: "それはあなたが期待するよりも痛いかもしれません。",
-                sentencePart1: "It might be ",
-                sentencePart2: " you expect.",
-                fullSentence: "It might be more painful than you expect.",
-                correctAnswer: "more painful than",
-                options: ["more painful than", "painfuller than", "as painful as", "the most painful"],
-                grammarPoint: "比較級 (Lesson 11-1)",
-                grammarExplanation: "painful の比較級は more painful です。",
-                trivia: "【トリビア】「痛い！」と言うと「どこが悪いか」教えてくれます。痛気持ちいいのが特徴。",
-                link: "https://www.taipeinavi.com/beauty/",
-                linkText: "台北のエステ・マッサージ (台北ナビ)"
-            },
-            {
-                id: 20,
-                category: "People",
-                question: "台湾の人々。",
-                japanese: "台湾の人々は、世界で最もフレンドリーな人々の一部です。",
-                sentencePart1: "Taiwanese people are some of ",
-                sentencePart2: " people in the world.",
-                fullSentence: "Taiwanese people are some of the friendliest people in the world.",
-                correctAnswer: "the friendliest",
-                options: ["the friendliest", "more friendly", "friendly", "friendlier"],
-                grammarPoint: "最上級 (Lesson 11-2)",
-                grammarExplanation: "friendly の最上級は friendliest です（yをiに変えてest）。",
-                trivia: "【トリビア】困っている人を見かけると、言葉が通じなくても親身に助けてくれる人が多いです。",
-                link: "https://jp.taiwan.net.tw/",
-                linkText: "台湾観光庁 (公式)"
-            }
-        ];
 
-        // Global State
-        const state = {
-            currentScreen: 'start',
-            currentQuestionIndex: 0,
-            score: 0,
-            selectedOption: null,
-            isAnswered: false,
-            showExplanation: false,
-            // Audio Recording & Scoring
-            isRecording: false,
-            audioUrl: null,
-            permissionError: false,
-            recognizedText: "",
-            pronunciationScore: null,
-            isScoring: false
-        };
+let activeSentenceElement = null;
+let selectedSentences = new Set();
 
-        // DOM Elements & Refs
-        let mediaRecorder = null;
-        let audioChunks = [];
-        let recognition = null;
-        let voices = [];
+// --- DOM Elements ---
+const sentenceList = document.getElementById('sentence-list');
+const appSubtitle = document.getElementById('app-subtitle');
+const toggleAnswerBtn = document.getElementById('toggle-answer-btn');
+const playSoundBtn = document.getElementById('play-sound-btn');
+const recordBtn = document.getElementById('record-btn');
+const toggleExplanationBtn = document.getElementById('toggle-explanation-btn');
+const startQuizBtn = document.getElementById('start-quiz-btn');
+const messageModal = document.getElementById('message-modal');
+const messageContent = document.getElementById('message-content');
+const quizModal = document.getElementById('quiz-modal');
+const closeQuizBtn = document.getElementById('close-quiz-btn');
+const quizContent = document.getElementById('quiz-content');
+const selectAllCheckbox = document.getElementById('select-all-checkbox');
 
-        // --- 2. Initial Setup & Helpers ---
+const pdfModal = document.getElementById('pdf-modal');
+const openPdfModalBtn = document.getElementById('open-pdf-modal-btn');
+const closeModalBtn = document.getElementById('close-modal-btn');
 
-        // Setup Speech Synthesis Voices
-        const loadVoices = () => {
-            voices = window.speechSynthesis.getVoices();
-        };
-        loadVoices();
-        if (window.speechSynthesis.onvoiceschanged !== undefined) {
-            window.speechSynthesis.onvoiceschanged = loadVoices;
+
+// --- Voice Synthesis Setup ---
+let synthesisVoice = null;
+
+function setSynthesisVoice() {
+    const voices = speechSynthesis.getVoices();
+    if (voices.length > 0) {
+        // Prefer Google's voice, then Microsoft's, then any other US English voice
+        synthesisVoice = voices.find(voice => voice.name === 'Google US English') ||
+                         voices.find(voice => voice.lang === 'en-US' && voice.name.includes('Google')) ||
+                         voices.find(voice => voice.lang === 'en-US' && voice.name.includes('Microsoft')) ||
+                         voices.find(voice => voice.lang === 'en-US');
+    }
+}
+
+// Voices are loaded asynchronously, so we need to listen for the event
+setSynthesisVoice();
+if (speechSynthesis.onvoiceschanged !== undefined) {
+    speechSynthesis.onvoiceschanged = setSynthesisVoice;
+}
+
+
+// --- Functions ---
+
+/**
+* Finds the specific form of an answer word within a sentence.
+* @param {string} enSentence - The English example sentence.
+* @param {string} answer - The base form of the word.
+* @returns {string|null} - The found word form or null if not found.
+*/
+function findAnswerFormInSentence(enSentence, answer) {
+    const originalWords = enSentence.split(' ');
+    // \b (単語境界) を使うために、ハイフンなども区切り文字として扱う
+    const words = enSentence.toLowerCase().split(/[\s,.-?!()]+/); 
+    const answerLower = answer.toLowerCase();
+
+    // Handle special cases and different forms
+    const irregularVerbs = {
+        'weep': 'wept',
+        'lead': 'led',
+        'stick': 'stuck',
+        'rise': 'rose',
+        'hang': 'hung',
+        'strike': 'struck',
+        'shake': 'shook',
+        'arise': 'arose',
+        'beat': 'beat',
+        'crop': 'cropped', // crop up
+        'survive': 'survived',
+        'feed': 'feed',
+        'run': 'ran',
+        'begin': 'began',
+        'go': 'went',
+        'come': 'came'
+    };
+
+    if (irregularVerbs[answerLower]) {
+        const irregularForm = irregularVerbs[answerLower];
+        // 元の単語配列から探す
+        const foundWord = originalWords.find(w => w.toLowerCase().replace(/[.,!?]$/, '') === irregularForm);
+        if (foundWord) return foundWord;
+    }
+    
+    for (let i = 0; i < originalWords.length; i++) {
+        const originalWord = originalWords[i];
+        const cleanWord = originalWord.toLowerCase().replace(/[.,!?]$/, ''); // 文末の句読点を削除
+
+        // Check for various word forms
+        if (
+            cleanWord === answerLower ||
+            cleanWord === answerLower + 's' ||
+            cleanWord === answerLower + 'es' ||
+            (answerLower.endsWith('y') && !['a', 'e', 'i', 'o', 'u'].includes(answerLower.slice(-2, -1))) && cleanWord === answerLower.slice(0, -1) + 'ies' ||
+            (answerLower.endsWith('e') && cleanWord === answerLower.slice(0, -1) + 'ing') ||
+            cleanWord === answerLower + 'ing' ||
+            cleanWord === answerLower + 'ed' ||
+            (answerLower.endsWith('e') && cleanWord === answerLower + 'd')
+        ) {
+            return originalWord; // 元の（大文字小文字や句読点を含む）単語を返す
         }
+    }
+    
+     // Fallback
+     if(irregularVerbs[answerLower]) {
+         const irregularForm = irregularVerbs[answerLower];
+         const foundWord = originalWords.find(w => w.toLowerCase().includes(irregularForm));
+         if(foundWord) return foundWord;
+     }
 
-        // Setup Speech Recognition
-        if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
-            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-            recognition = new SpeechRecognition();
-            recognition.continuous = true;
-            recognition.interimResults = true;
-            recognition.lang = 'en-US';
+    // 最後の手段として、部分一致を探す
+    const fallback = originalWords.find(w => w.toLowerCase().includes(answerLower));
+    return fallback || answer; // Return base answer if no form is found
+}
+
+
+/**
+* Creates the HTML for a sentence, wrapping the answer word in spans.
+* @param {string} enSentence - The English example sentence from the data.
+* @param {string} answer - The base form of the word to be hidden.
+* @returns {string} - The HTML string for the English sentence.
+*/
+function formatEnglishSentence(enSentence, answer) {
+    const blank = '__________';
+    const actualWord = findAnswerFormInSentence(enSentence, answer);
+
+    if (actualWord) {
+        const answerHtml = `<span class="answer-span">${actualWord}</span>`;
+        const underlineHtml = `<span class="underline-span">${blank}</span>`;
+        
+        // センテンスを単語に分割（句読点も保持）
+        const words = enSentence.split(' ');
+        let replaced = false; // 最初の1回だけ置換するためのフラグ
+        const processedWords = words.map(word => {
+            if (replaced) return word; // 既に置換済みの場合はそのまま
+
+            // "horizon." と "horizon" のように、句読点を除いて一致する場合
+            if (word.replace(/[.,!?]$/, '') === actualWord.replace(/[.,!?]$/, '')) {
+                 replaced = true;
+                 // 元の単語の句読点を保持する
+                 const punctuation = word.match(/[.,!?]$/);
+                 if (punctuation) {
+                     // actualWord自体に句読点がない場合
+                     const baseWordHtml = `<span class="answer-span">${actualWord.replace(/[.,!?]$/, '')}</span>`;
+                     return `${baseWordHtml}${underlineHtml}${punctuation[0]}`;
+                 } else {
+                     return `${answerHtml}${underlineHtml}`;
+                 }
+            }
+            return word; // 一致しない場合はそのまま
+        });
+
+        let replacedSentence = processedWords.join(' ');
+
+        // 上記のロジックで置換できなかった場合
+        if (!replaced && enSentence.includes(actualWord)) {
+             // 最初に一致したものだけを置換
+             replacedSentence = enSentence.replace(actualWord, `${answerHtml}${underlineHtml}`);
         }
-
-        const speakText = (text) => {
-            if ('speechSynthesis' in window) {
-                window.speechSynthesis.cancel();
-                const utterance = new SpeechSynthesisUtterance(text);
-                
-                const preferredVoice = voices.find(v => v.name === 'Google US English') ||
-                                       voices.find(v => v.name.includes('Google') && v.lang.includes('en-US')) ||
-                                       voices.find(v => v.name === 'Microsoft Zira Desktop - English (United States)') ||
-                                       voices.find(v => v.name === 'Samantha') ||
-                                       voices.find(v => v.lang === 'en-US');
-
-                if (preferredVoice) {
-                    utterance.voice = preferredVoice;
-                }
-
-                utterance.lang = 'en-US';
-                utterance.rate = 0.9;
-                utterance.pitch = 1.0;
-                
-                window.speechSynthesis.speak(utterance);
-            }
-        };
-
-        // --- 3. App Logic Functions ---
-
-        const startQuiz = () => {
-            state.currentScreen = 'quiz';
-            state.currentQuestionIndex = 0;
-            state.score = 0;
-            state.isAnswered = false;
-            state.showExplanation = false;
-            resetAudioState();
-            render();
-        };
-
-        const goHome = () => {
-            state.currentScreen = 'start';
-            resetAudioState();
-            render();
-        };
-
-        const resetAudioState = () => {
-            state.isRecording = false;
-            state.audioUrl = null;
-            state.permissionError = false;
-            state.recognizedText = "";
-            state.pronunciationScore = null;
-            state.isScoring = false;
-            window.speechSynthesis.cancel();
-            if (mediaRecorder && mediaRecorder.state !== 'inactive') mediaRecorder.stop();
-            if (recognition) try { recognition.stop(); } catch(e){}
-        };
-
-        const selectOption = (option) => {
-            if (state.isAnswered) return;
-            state.selectedOption = option;
-            state.isAnswered = true;
-            state.showExplanation = true;
-            
-            if (option === questions[state.currentQuestionIndex].correctAnswer) {
-                state.score++;
-            }
-            render();
-        };
-
-        const nextQuestion = () => {
-            if (state.currentQuestionIndex < questions.length - 1) {
-                state.currentQuestionIndex++;
-                state.isAnswered = false;
-                state.showExplanation = false;
-                state.selectedOption = null;
-                resetAudioState();
-                render();
-            } else {
-                state.currentScreen = 'result';
-                resetAudioState();
-                render();
-            }
-        };
-
-        // Audio Recording Logic
-        const startRecording = async () => {
-            try {
-                state.audioUrl = null;
-                state.recognizedText = "";
-                state.pronunciationScore = null;
-                state.isScoring = false;
-                
-                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-                mediaRecorder = new MediaRecorder(stream);
-                audioChunks = [];
-
-                mediaRecorder.ondataavailable = (event) => {
-                    if (event.data.size > 0) audioChunks.push(event.data);
-                };
-
-                mediaRecorder.onstop = () => {
-                    const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
-                    const url = URL.createObjectURL(audioBlob);
-                    state.audioUrl = url;
-                    state.isRecording = false;
-                    render(); // Re-render to show play button
-                    stream.getTracks().forEach(track => track.stop());
-                };
-
-                mediaRecorder.start();
-                state.isRecording = true;
-                state.permissionError = false;
-
-                // Recognition
-                if (recognition) {
-                    try {
-                        recognition.start();
-                        recognition.onresult = (event) => {
-                            let final = "";
-                            for (let i = event.resultIndex; i < event.results.length; ++i) {
-                                if (event.results[i].isFinal) {
-                                    final += event.results[i][0].transcript;
-                                }
-                            }
-                            if(final) state.recognizedText += final;
-                        };
-                    } catch(e) { console.log("Recognition error/restart", e); }
-                }
-                
-                render();
-
-            } catch (err) {
-                console.error("Microphone denied:", err);
-                state.permissionError = true;
-                render();
-            }
-        };
-
-        const stopRecording = () => {
-            if (mediaRecorder && state.isRecording) {
-                mediaRecorder.stop();
-                if (recognition) {
-                    recognition.stop();
-                    state.isScoring = true;
-                    render();
-                    setTimeout(() => {
-                        calculateScore();
-                        state.isScoring = false;
-                        render();
-                    }, 800);
-                }
-            }
-        };
-
-        const calculateScore = () => {
-            const target = questions[state.currentQuestionIndex].fullSentence;
-            // Fallback if recognizedText is empty or not updated yet
-            const text = state.recognizedText || ""; 
-            const similarity = calculateSimilarity(text, target);
-            
-            let score = 0;
-            if (similarity > 0.95) score = Math.floor(95 + Math.random() * 4);
-            else if (similarity > 0.8) score = Math.floor(80 + (similarity - 0.8) * 100);
-            else if (similarity > 0.5) score = Math.floor(60 + (similarity - 0.5) * 60);
-            else if (similarity > 0.2) score = Math.floor(30 + (similarity - 0.2) * 50);
-            else score = Math.floor(similarity * 100);
-
-            if (Math.abs(text.length - target.length) < 10 && score < 80) score += 5;
-            if (score > 100) score = 100;
-            
-            state.pronunciationScore = score;
-        };
-
-        const playRecording = () => {
-            if (state.audioUrl) {
-                const audio = new Audio(state.audioUrl);
-                audio.play();
-            }
-        };
+        
+        return replacedSentence;
+    }
+    return enSentence;
+}
 
 
-        // --- 4. Render Functions ---
+/**
+* Renders all sentences for the chapter.
+*/
+function renderChapter() {
+    sentenceList.innerHTML = ''; // Clear existing list
+    if (chapterData.length === 0) {
+        sentenceList.innerHTML = '<p class="text-center text-gray-500">データがありません。用例を追加してください。</p>';
+        return;
+    }
 
-        const appDiv = document.getElementById('app');
+    // データのクリーニング（説明文から不要なタグを削除）
+    chapterData.forEach(item => {
+        if (item.explanation) {
+            item.explanation = item.explanation.replace(/\{D:\d+\}/g, '');
+        }
+    });
 
-        const renderStartScreen = () => {
-            return `
-                <div class="flex flex-col items-center justify-center h-full p-8 text-center bg-gradient-to-b from-red-50 to-orange-100 overflow-y-auto relative">
-                    <!-- Deco Icons -->
-                    <div class="absolute top-10 left-10 opacity-20 text-red-500 transform -rotate-12"><i data-lucide="utensils" width="80" height="80"></i></div>
-                    <div class="absolute bottom-20 right-10 opacity-20 text-green-600 transform rotate-12"><i data-lucide="mountain" width="100" height="100"></i></div>
-                    <div class="absolute top-20 right-20 opacity-20 text-yellow-600"><i data-lucide="coffee" width="70" height="70"></i></div>
+    chapterData.forEach(item => {
+        const sentenceDiv = document.createElement('div');
+        sentenceDiv.className = 'sentence-item p-4 border border-gray-200 rounded-lg bg-white transition-shadow duration-300 hover:shadow-md';
+        sentenceDiv.dataset.id = item.id;
+        sentenceDiv.dataset.fullSentence = item.en;
 
-                    <div class="mb-8 p-6 bg-white rounded-full shadow-xl border-4 border-red-500 mt-10 z-10">
-                        <i data-lucide="plane" class="text-red-600" width="80" height="80"></i>
-                    </div>
-                    
-                    <h1 class="text-5xl font-black text-gray-800 mb-4 tracking-wider drop-shadow-sm z-10">
-                        <span class="text-red-600">Taiwan</span> School Trip
-                    </h1>
-                    <h2 class="text-3xl text-gray-700 font-bold mb-8 z-10 bg-white/80 px-6 py-2 rounded-lg shadow-sm">
-                        Comparatives & Trivia Challenge
-                    </h2>
-                    
-                    <div class="bg-white/90 p-6 rounded-2xl shadow-md mb-10 max-w-lg z-10 border-2 border-red-100 mx-auto">
-                        <p class="text-xl text-gray-700 mb-6 font-medium leading-relaxed">
-                            Lesson 11の比較表現をマスターして、<br/>
-                            台湾の文化・歴史・グルメを予習しよう！
-                        </p>
-                        <div class="space-y-3 text-left">
-                            <div class="flex items-center gap-3 p-3 bg-yellow-50 rounded-lg border border-yellow-200">
-                                <i data-lucide="mic" class="text-yellow-600 flex-shrink-0" width="24"></i>
-                                <span class="text-lg text-gray-800 font-bold">発音練習機能付き (AI採点)</span>
-                            </div>
-                            <div class="flex items-center gap-3 p-3 bg-blue-50 rounded-lg border border-blue-200">
-                                <i data-lucide="external-link" class="text-blue-600 flex-shrink-0" width="24"></i>
-                                <span class="text-lg text-gray-800 font-bold">参考リンクで深掘り</span>
-                            </div>
-                        </div>
-                    </div>
+        const englishSentenceHtml = formatEnglishSentence(item.en, item.answer);
 
-                    <button onclick="startQuiz()" class="px-12 py-5 bg-gradient-to-r from-red-600 to-red-500 text-white text-3xl font-bold rounded-full shadow-xl hover:from-red-700 hover:to-red-600 transition-all transform hover:scale-105 flex items-center gap-3 mb-10 z-10 ring-4 ring-red-200 mx-auto cursor-pointer">
-                        Quiz Start <i data-lucide="plane" width="32"></i>
-                    </button>
+        sentenceDiv.innerHTML = `
+        <div class="flex items-start space-x-4">
+            <input type="checkbox" class="sentence-checkbox mt-1 h-5 w-5 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500" data-id="${item.id}">
+            <span class="text-lg font-bold text-gray-500">${item.id}</span>
+            <div class="flex-1 cursor-pointer">
+                <p class="mb-2 text-gray-700">${item.ja}</p>
+                <p class="font-english">${englishSentenceHtml}</p>
+                <div class="explanation mt-4 p-4 bg-yellow-100 border-l-4 border-yellow-400 text-gray-700 rounded-r-lg">
+                ${item.explanation}
                 </div>
-            `;
+            </div>
+        </div>
+        `;
+        sentenceList.appendChild(sentenceDiv);
+    });
+    
+    document.querySelectorAll('.sentence-item .flex-1').forEach(item => {
+        item.addEventListener('click', (e) => {
+             const sentenceWrapper = e.currentTarget.closest('.sentence-item');
+            if (activeSentenceElement) {
+                activeSentenceElement.classList.remove('ring-2', 'ring-blue-400', 'shadow-xl');
+            }
+            activeSentenceElement = sentenceWrapper;
+            activeSentenceElement.classList.add('ring-2', 'ring-blue-400', 'shadow-xl');
+        });
+    });
+
+    document.querySelectorAll('.sentence-checkbox').forEach(checkbox => {
+        checkbox.addEventListener('click', (e) => {
+            e.stopPropagation(); // Prevent sentence selection when clicking checkbox
+            const sentenceId = e.target.dataset.id;
+            if (e.target.checked) {
+                selectedSentences.add(sentenceId);
+            } else {
+                selectedSentences.delete(sentenceId);
+            }
+        });
+    });
+    
+    if (sentenceList.firstChild && sentenceList.firstChild.querySelector('.flex-1')) {
+        sentenceList.firstChild.querySelector('.flex-1').click();
+    }
+}
+/**
+* Shows a message in a modal.
+* @param {string} htmlContent - The HTML content for the message.
+* @param {number} duration - Optional duration in ms to auto-hide.
+*/
+function showMessage(htmlContent, duration = null) {
+    messageContent.innerHTML = htmlContent;
+    messageModal.classList.remove('hidden');
+    if (duration) {
+        setTimeout(() => {
+            if (!messageModal.classList.contains('hidden')) {
+                 messageModal.classList.add('hidden');
+            }
+        }, duration);
+    }
+}
+
+
+/**
+* Plays the audio for the currently selected sentence.
+*/
+function playSound() {
+    if (!activeSentenceElement) {
+        showMessage('<p>文を選択してください。</p>', 2000);
+        return;
+    }
+
+    // Attempt to set the voice again in case it was not loaded initially
+    if (!synthesisVoice) {
+        setSynthesisVoice();
+    }
+
+    speechSynthesis.cancel();
+    const textToSpeak = activeSentenceElement.dataset.fullSentence;
+    const utterance = new SpeechSynthesisUtterance(textToSpeak);
+
+    // Set language and voice
+    utterance.lang = 'en-US';
+    if (synthesisVoice) {
+        utterance.voice = synthesisVoice;
+    }
+
+    // Set rate and pitch for a more natural sound
+    utterance.rate = 1.0;
+    utterance.pitch = 1.0;
+    
+    // エラーハンドリング
+    utterance.onerror = (event) => {
+        console.error('SpeechSynthesisUtterance.onerror', event);
+        showMessage('<p>音声の再生中にエラーが発生しました。</p>', 3000);
+    };
+
+    speechSynthesis.speak(utterance);
+}
+
+
+/**
+* Handles the recording and evaluation process.
+*/
+function handleRecording() {
+    if (!activeSentenceElement) {
+        showMessage('<p>文を選択してください。</p>', 2000);
+        return;
+    }
+
+    speechSynthesis.cancel();
+
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+        showMessage('<p>お使いのブラウザは音声認識に対応していません。</p>', 3000);
+        return;
+    }
+
+    try {
+        const recognition = new SpeechRecognition();
+        recognition.lang = 'en-US';
+        recognition.interimResults = false;
+
+        recognition.onstart = () => {
+             showMessage('<p class="text-2xl">マイクに向かって話してください...</p><div class="animate-pulse text-red-500 text-4xl mt-4">●</div>');
         };
 
-        const renderQuizScreen = () => {
-            const currentQ = questions[state.currentQuestionIndex];
-            const isCorrect = state.selectedOption === currentQ.correctAnswer;
-            const progress = ((state.currentQuestionIndex + 1) / questions.length) * 100;
+        recognition.onresult = (event) => {
+            const transcript = event.results[0][0].transcript;
+            evaluatePronunciation(transcript);
+        };
 
-            // Options HTML
-            let optionsHtml = '';
-            currentQ.options.forEach(option => {
-                let btnClass = "bg-white border-2 border-gray-300 hover:border-red-400 hover:bg-red-50 text-gray-700 shadow-sm hover:shadow-md cursor-pointer";
-                if (state.isAnswered) {
-                    if (option === currentQ.correctAnswer) {
-                        btnClass = "bg-green-100 border-green-500 text-green-900 font-bold ring-2 ring-green-300";
-                    } else if (option === state.selectedOption) {
-                        btnClass = "bg-red-100 border-red-500 text-red-900";
-                    } else {
-                        btnClass = "bg-gray-100 border-gray-200 text-gray-400 opacity-60";
+        recognition.onerror = (event) => {
+            let errorMessage = 'エラーが発生しました';
+            if (event.error === 'no-speech') {
+                errorMessage = '音声が認識されませんでした。もう一度お試しください。';
+            } else if (event.error === 'not-allowed' || event.error === 'service-not-allowed') {
+                errorMessage = 'マイクの使用が許可されていません。ブラウザのアドレスバーの横にあるアイコンからマイクを許可してください。';
+            } else if (event.error === 'audio-capture') {
+                errorMessage = 'マイクに問題が発生しました。他のアプリで使用中でないか確認してください。';
+            }
+            showMessage(`<p>${errorMessage}</p>`, 5000);
+        };
+        
+        recognition.onend = () => {
+             if (messageContent.innerHTML.includes('マイクに向かって話してください')) {
+                messageModal.classList.add('hidden');
+             }
+        };
+
+        recognition.start();
+    } catch (e) {
+        showMessage('<p>音声認識の開始中に予期せぬエラーが発生しました。</p>', 3000);
+        console.error("Speech Recognition Error:", e);
+    }
+}
+/**
+* Evaluates the pronunciation by comparing the transcript to the original sentence.
+*/
+function evaluatePronunciation(transcript) {
+    const originalText = activeSentenceElement.dataset.fullSentence;
+
+    const cleanOrig = originalText.toLowerCase().replace(/[^\w\s']/g, '').split(' ').filter(Boolean); // アポストロフィを許可
+    const cleanTrans = transcript.toLowerCase().replace(/[^\w\s']/g, '').split(' ').filter(Boolean);
+    
+    let matches = 0;
+    const transWords = new Set(cleanTrans);
+    
+    cleanOrig.forEach(word => {
+        if (transWords.has(word)) {
+            matches++;
+            transWords.delete(word); // 一致した単語はセットから削除 (重複評価を防ぐ)
+        }
+    });
+
+    const similarity = cleanOrig.length > 0 ? (matches / cleanOrig.length) : 0;
+    
+    let score;
+    if (similarity >= 0.9) {
+        score = 95 + Math.floor(Math.random() * 6); // 95-100
+    } else if (similarity >= 0.7) {
+        score = 88 + Math.floor(Math.random() * 7); // 88-94
+    } else if (similarity >= 0.5) {
+        score = 80 + Math.floor(Math.random() * 8); // 80-87
+    } else if (similarity >= 0.3) {
+        score = 70 + Math.floor(Math.random() * 10); // 70-79
+    } else {
+        score = 60 + Math.floor(Math.random() * 10); // 60-69
+    }
+
+    if (score > 100) score = 100;
+
+
+    const messageHtml = `
+    <h3 class="text-2xl font-bold mb-4">評価結果</h3>
+    <p class="text-7xl font-bold text-blue-600 mb-4">${score}<span class="text-2xl">点</span></p>
+    <p class="text-gray-600 mb-2"><strong>あなたの発音:</strong> ${transcript}</p>
+    <p class="text-gray-600"><strong>元の文:</strong> ${originalText}</p>
+    <button onclick="document.getElementById('message-modal').classList.add('hidden')" class="mt-6 bg-blue-500 text-white py-2 px-6 rounded-lg">閉じる</button>
+    `;
+    showMessage(messageHtml);
+}
+
+
+/**
+* Starts the quiz.
+*/
+function startQuiz() {
+    if (chapterData.length < 10) {
+        showMessage('<p>クイズを作成するには、データが10個以上必要です。</p>', 3000);
+        return;
+    }
+
+    const uniqueAnswers = [...new Map(chapterData.map(item => [item.answer, item])).values()];
+    
+    if (uniqueAnswers.length < 4) {
+        showMessage('<p>クイズの選択肢を作成するには、異なる単語が4つ以上必要です。</p>', 3000);
+        return;
+    }
+
+    const shuffled = uniqueAnswers.sort(() => 0.5 - Math.random());
+    const questions = shuffled.slice(0, 10); // 最大10問
+
+    let currentQuestionIndex = 0;
+    let score = 0;
+
+    function showQuestion() {
+        if (currentQuestionIndex >= questions.length) {
+            showQuizResult();
+            return;
+        }
+
+        const question = questions[currentQuestionIndex];
+        const baseAnswer = question.answer;
+
+        const correctOptionText = findAnswerFormInSentence(question.en, baseAnswer) || baseAnswer;
+        
+        let questionSentence = question.en;
+        
+        const words = question.en.split(' ');
+        let replaced = false;
+        const processedWords = words.map(word => {
+            if (replaced) return word;
+            if (word === correctOptionText || word.replace(/[.,!?]$/, '') === correctOptionText.replace(/[.,!?]$/, '')) {
+                replaced = true;
+                const punctuation = word.match(/[.,!?]$/);
+                return '(______)' + (punctuation ? punctuation[0] : '');
+            }
+            return word;
+        });
+        questionSentence = processedWords.join(' ');
+        
+        if (!replaced) {
+            questionSentence = question.en.replace(correctOptionText, '(______)');
+        }
+
+
+        const incorrectAnswers = [...new Set(chapterData.map(item => item.answer))]
+            .filter(answer => answer !== baseAnswer)
+            .sort(() => 0.5 - Math.random())
+            .slice(0, 3);
+
+        const options = [correctOptionText, ...incorrectAnswers].sort(() => 0.5 - Math.random());
+
+        quizContent.innerHTML = `
+        <h3 class="text-2xl font-bold mb-2">問題 ${currentQuestionIndex + 1}/${questions.length}</h3>
+        <p class="text-lg mb-4">${question.ja}</p>
+        <p class="font-english text-xl mb-6 p-4 bg-gray-100 rounded-lg">${questionSentence}</p>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        ${options.map(opt => `<button class="quiz-option p-4 bg-blue-100 hover:bg-blue-200 rounded-lg text-left text-lg font-english" data-option-text="${opt}">${opt}</button>`).join('')}
+        </div>
+        `;
+
+        document.querySelectorAll('.quiz-option').forEach(button => {
+            button.addEventListener('click', () => {
+                const selectedOptionText = button.dataset.optionText;
+                
+                if (selectedOptionText === correctOptionText) {
+                    score++;
+                    button.classList.add('bg-green-400', 'text-white');
+                } else {
+                    button.classList.add('bg-red-400', 'text-white');
+                    const correctButton = document.querySelector(`[data-option-text="${CSS.escape(correctOptionText)}"]`);
+                    if (correctButton) {
+                        correctButton.classList.add('bg-green-400', 'text-white');
                     }
                 }
-                optionsHtml += `<button ${state.isAnswered ? 'disabled' : ''} onclick="selectOption('${option}')" class="p-6 rounded-xl transition-all duration-200 text-xl font-medium w-full ${btnClass}">${option}</button>`;
+                document.querySelectorAll('.quiz-option').forEach(btn => btn.disabled = true);
+
+                setTimeout(() => {
+                    currentQuestionIndex++;
+                    showQuestion();
+                }, 1200);
             });
+        });
+    }
 
-            // Recording Controls Logic
-            let recordingControls = '';
-            if (state.isAnswered) {
-                const micBtn = !state.isRecording 
-                    ? `<button onclick="startRecording()" ${state.isScoring ? 'disabled' : ''} class="flex-1 flex items-center justify-center gap-2 py-3 bg-white border-2 border-red-400 text-red-500 rounded-lg hover:bg-red-50 transition-colors font-bold text-lg ${state.isScoring ? 'opacity-50 cursor-not-allowed' : ''}"><i data-lucide="mic" width="20"></i> 録音 (Record)</button>`
-                    : `<button onclick="stopRecording()" class="flex-1 flex items-center justify-center gap-2 py-3 bg-red-600 text-white rounded-lg animate-pulse font-bold text-lg shadow-lg"><i data-lucide="square" width="20"></i> 停止 (Stop)</button>`;
-                
-                const playBtnClass = state.audioUrl ? 'bg-green-100 text-green-700 border-green-400 hover:bg-green-200 cursor-pointer shadow-sm' : 'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed';
-                
-                let scoreDisplay = '';
-                if(state.isScoring) {
-                    scoreDisplay = `<div class="text-center text-blue-600 font-bold mt-2 animate-pulse">採点中... (Scoring...)</div>`;
-                } else if (state.pronunciationScore !== null) {
-                    const score = state.pronunciationScore;
-                    const starColor = score >= 80 ? 'text-yellow-500 fill-current' : 'text-gray-300';
-                    const msg = score >= 95 ? "Excellent! Native Level!" :
-                                score >= 80 ? "Great job! Very clear!" :
-                                score >= 60 ? "Good! Keep practicing." : "Let's try again!";
-                    
-                    scoreDisplay = `
-                        <div class="mt-2 p-4 bg-yellow-50 border border-yellow-200 rounded-xl">
-                            <div class="flex justify-center items-center gap-2 mb-2">
-                                <i data-lucide="star" class="${starColor}" width="24" fill="${score >= 80 ? 'currentColor' : 'none'}"></i>
-                                <span class="text-2xl font-black text-gray-800">${score}</span>
-                                <span class="text-sm text-gray-500 font-bold">/100</span>
-                            </div>
-                            <p class="text-center font-bold text-gray-600 mb-2">${msg}</p>
-                            ${state.recognizedText ? `<div class="text-center text-sm text-gray-500 border-t border-yellow-100 pt-2"><div>You said:</div><div class="font-medium text-gray-800 italic">"${state.recognizedText}"</div></div>` : ''}
-                        </div>
-                    `;
+    function showQuizResult() {
+        quizContent.innerHTML = `
+        <h3 class="text-3xl font-bold mb-4 text-center">テスト終了！</h3>
+        <p class="text-center text-xl mb-6">あなたのスコアは...</p>
+        <p class="text-center text-7xl font-bold text-purple-600">${Math.round((score / questions.length) * 100)}<span class="text-3xl">点</span></p>
+        <p class="text-center text-xl mt-2">(${questions.length}問中 ${score}問正解)</p>
+        `;
+    }
+
+    showQuestion();
+    quizModal.classList.remove('hidden');
+}
+
+/**
+ * Opens a new window with content and triggers the print dialog.
+ */
+function openPrintWindow(bodyContent, title) {
+    const htmlContent = `
+        <!DOCTYPE html>
+        <html lang="ja">
+        <head>
+            <meta charset="UTF-8">
+            <title>${title}</title>
+            <style>
+                body { font-family: "Hiragino Kaku Gothic ProN", "Meiryo", sans-serif; line-height: 1.8; margin: 25px; }
+                @media print { .no-print { display: none; } }
+                h1, h2 { text-align: center; border-bottom: 2px solid #333; padding-bottom: 10px; margin-bottom: 25px; }
+                ol, ul { list-style-position: inside; padding-left: 0; }
+                li { margin-bottom: 15px; }
+                .list-container { 
+                    column-count: 2; 
+                    column-gap: 40px; 
                 }
+                .list-container li, .list-container p { 
+                    -webkit-column-break-inside: avoid; 
+                    page-break-inside: avoid; 
+                    break-inside: avoid; 
+                }
+                ol li {
+                     list-style-type: decimal;
+                     margin-left: 1.5em; /* 番号が見えるように調整 */
+                }
+                /* 問題文を改行させないスタイル */
+                .inline-content {
+                    display: inline;
+                }
+                @media (max-width: 700px) { .list-container { column-count: 1; } }
+                .answer-key { page-break-before: always; }
+            </style>
+        </head>
+        <body>
+            <h1>${title}</h1>
+            <p class="no-print" style="text-align:center;">
+                印刷ダイアログが表示されない場合は、ブラウザの印刷機能（Ctrl+PまたはCmd+P）を使用してください。
+            </p>
+            ${bodyContent}
+        </body>
+        </html>
+    `;
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) {
+        showMessage('<p>ポップアップウィンドウがブロックされました。ブラウザの設定を確認してください。</p>', 5000);
+        return;
+    }
+    printWindow.document.write(htmlContent);
+    printWindow.document.close();
+    setTimeout(() => {
+        printWindow.focus(); // Safari対策
+        printWindow.print();
+    }, 250);
+}
 
-                recordingControls = `
-                    <div class="mt-8 pt-6 border-t-2 border-gray-200 animate-fade-in">
-                        <div class="flex items-center justify-center gap-2 text-indigo-600 font-bold mb-4 text-lg">
-                            <i data-lucide="volume-2" width="20"></i>
-                            <span>Speaking Practice</span>
-                        </div>
-                        <div class="flex flex-col gap-3 max-w-md mx-auto">
-                            <button onclick="speakText('${currentQ.fullSentence.replace(/'/g, "\\'")}')" class="flex items-center justify-center gap-2 w-full py-3 bg-indigo-100 text-indigo-700 rounded-lg hover:bg-indigo-200 transition-colors font-bold text-lg">
-                                <i data-lucide="volume-2" width="20"></i> お手本 (Listen)
-                            </button>
-                            <div class="flex items-center gap-3">
-                                ${micBtn}
-                                <button onclick="playRecording()" ${!state.audioUrl ? 'disabled' : ''} class="flex-1 flex items-center justify-center gap-2 py-3 rounded-lg font-bold text-lg transition-colors border-2 ${playBtnClass}">
-                                    <i data-lucide="play" width="20"></i> 再生 (Play)
-                                </button>
-                            </div>
-                            ${state.permissionError ? '<div class="text-sm text-red-500 flex items-center gap-2 font-bold bg-red-50 p-2 rounded justify-center"><i data-lucide="alert-circle" width="16"></i> マイクの使用が許可されていません</div>' : ''}
-                            ${scoreDisplay}
-                        </div>
-                    </div>
-                `;
+
+function getSelectedItems() {
+     if (selectedSentences.size === 0) {
+        showMessage('<p>PDFを作成する問題を選択してください。</p>', 3000);
+        return null;
+    }
+    return Array.from(selectedSentences)
+        .map(id => chapterData.find(item => item.id === id))
+        .filter(Boolean) 
+        .sort((a, b) => {
+             // IDを正しくソート
+             const aId = a.id.toString();
+             const bId = b.id.toString();
+
+             const aParts = aId.split('-').map(s => parseInt(s.replace(/\D/g, ''), 10) || 0);
+             const bParts = bId.split('-').map(s => parseInt(s.replace(/\D/g, ''), 10) || 0);
+             
+             if (aParts[0] !== bParts[0]) {
+                 return aParts[0] - bParts[0];
+             }
+             
+             const subA = aParts[1] || 0;
+             const subB = bParts[1] || 0;
+             return subA - subB;
+        });
+}
+
+
+// --- Event Listeners ---
+
+toggleAnswerBtn.addEventListener('click', () => {
+    if (!activeSentenceElement) {
+        showMessage('<p>文を選択してください。</p>', 2000);
+        return;
+    }
+    activeSentenceElement.classList.toggle('show-answer');
+});
+
+toggleExplanationBtn.addEventListener('click', () => {
+    if (!activeSentenceElement) {
+        showMessage('<p>文を選択してください。</p>', 2000);
+        return;
+    }
+    const explanationDiv = activeSentenceElement.querySelector('.explanation');
+    if (explanationDiv.style.display === 'block') {
+        explanationDiv.style.display = 'none';
+    } else {
+        explanationDiv.style.display = 'block';
+    }
+});
+
+selectAllCheckbox.addEventListener('change', (e) => {
+    const isChecked = e.target.checked;
+    const checkboxes = document.querySelectorAll('.sentence-checkbox');
+    checkboxes.forEach(checkbox => {
+        checkbox.checked = isChecked;
+        const sentenceId = checkbox.dataset.id;
+        if (isChecked) {
+            selectedSentences.add(sentenceId);
+        } else {
+            selectedSentences.delete(sentenceId);
+        }
+    });
+});
+
+playSoundBtn.addEventListener('click', playSound);
+recordBtn.addEventListener('click', handleRecording);
+startQuizBtn.addEventListener('click', startQuiz);
+closeQuizBtn.addEventListener('click', () => quizModal.classList.add('hidden'));
+
+// PDF Modal Listeners
+openPdfModalBtn.addEventListener('click', () => {
+    if (selectedSentences.size === 0) {
+        showMessage('<p>PDFを作成する問題を選択してください。</p>', 3000);
+        return;
+    }
+    pdfModal.classList.remove('hidden')
+});
+closeModalBtn.addEventListener('click', () => pdfModal.classList.add('hidden'));
+
+document.getElementById('download-list-btn').addEventListener('click', () => {
+    const items = getSelectedItems();
+    if (!items) return;
+
+    const uniqueWords = new Map();
+    items.forEach(item => {
+        if (!uniqueWords.has(item.answer)) {
+            uniqueWords.set(item.answer, item);
+        }
+    });
+    // 抽出順（ID順）にソートするために、MapのValueを一度配列にしてソート
+    const uniqueItems = Array.from(uniqueWords.values()).sort((a, b) => {
+         const aId = a.id.toString();
+         const bId = b.id.toString();
+         const aParts = aId.split('-').map(s => parseInt(s.replace(/\D/g, ''), 10) || 0);
+         const bParts = bId.split('-').map(s => parseInt(s.replace(/\D/g, ''), 10) || 0);
+         return aParts[0] - bParts[0];
+    });
+
+
+    const listItems = uniqueItems.map(item => `<li><span class="inline-content"><strong>${item.answer}</strong>: ${item.explanation.replace(/\n/g, ' ')}</span></li>`).join('');
+    openPrintWindow(`<ul class="list-container">${listItems}</ul>`, '重要語句リスト');
+    pdfModal.classList.add('hidden');
+});
+
+document.getElementById('download-en-quiz-btn').addEventListener('click', () => {
+    const items = getSelectedItems();
+    if (!items) return;
+
+    const uniqueWords = new Map();
+    items.forEach(item => {
+        if (!uniqueWords.has(item.answer)) {
+            uniqueWords.set(item.answer, item);
+        }
+    });
+    const uniqueItems = Array.from(uniqueWords.values()).sort((a, b) => {
+         const aId = a.id.toString();
+         const bId = b.id.toString();
+         const aParts = aId.split('-').map(s => parseInt(s.replace(/\D/g, ''), 10) || 0);
+         const bParts = bId.split('-').map(s => parseInt(s.replace(/\D/g, ''), 10) || 0);
+         return aParts[0] - bParts[0];
+    });
+
+    const quizItems = uniqueItems.map((item) => `<li><span class="inline-content">${item.explanation.replace(/\n/g, ' ')}: _________________________</span></li>`).join('');
+    const answerItems = uniqueItems.map((item) => `<li><span class="inline-content">${item.answer}</span></li>`).join('');
+    const bodyContent = `<h2>問題用紙</h2><ol class="list-container">${quizItems}</ol><div class="answer-key"><h2>解答</h2><ol class="list-container">${answerItems}</ol></div>`;
+    openPrintWindow(bodyContent, '重要語句テスト (英語を解答)');
+    pdfModal.classList.add('hidden');
+});
+
+document.getElementById('download-ja-quiz-btn').addEventListener('click', () => {
+    const items = getSelectedItems();
+    if (!items) return;
+    
+    const uniqueWords = new Map();
+    items.forEach(item => {
+        if (!uniqueWords.has(item.answer)) {
+            uniqueWords.set(item.answer, item);
+        }
+    });
+    const uniqueItems = Array.from(uniqueWords.values()).sort((a, b) => {
+         const aId = a.id.toString();
+         const bId = b.id.toString();
+         const aParts = aId.split('-').map(s => parseInt(s.replace(/\D/g, ''), 10) || 0);
+         const bParts = bId.split('-').map(s => parseInt(s.replace(/\D/g, ''), 10) || 0);
+         return aParts[0] - bParts[0];
+    });
+
+    const quizItems = uniqueItems.map((item) => `<li><span class="inline-content">${item.answer}: _________________________</span></li>`).join('');
+    const answerItems = uniqueItems.map((item) => `<li><span class="inline-content">${item.explanation.replace(/\n/g, ' ')}</span></li>`).join('');
+    const bodyContent = `<h2>問題用紙</h2><ol class="list-container">${quizItems}</ol><div class="answer-key"><h2>解答</h2><ol class="list-container">${answerItems}</ol></div>`;
+    openPrintWindow(bodyContent, '重要語句テスト (日本語を解答)');
+    pdfModal.classList.add('hidden');
+});
+
+document.getElementById('download-mixed-quiz-btn').addEventListener('click', () => {
+    const items = getSelectedItems();
+    if (!items) return;
+
+    const uniqueWords = new Map();
+    items.forEach(item => {
+        if (!uniqueWords.has(item.answer)) {
+            uniqueWords.set(item.answer, item);
+        }
+    });
+    const uniqueItems = Array.from(uniqueWords.values()).sort((a, b) => {
+         const aId = a.id.toString();
+         const bId = b.id.toString();
+         const aParts = aId.split('-').map(s => parseInt(s.replace(/\D/g, ''), 10) || 0);
+         const bParts = bId.split('-').map(s => parseInt(s.replace(/\D/g, ''), 10) || 0);
+         return aParts[0] - bParts[0];
+    });
+
+    let quizItems = '';
+    let answerItems = '';
+    uniqueItems.forEach((item) => {
+        if (Math.random() > 0.5) {
+            quizItems += `<li><span class="inline-content">${item.explanation.replace(/\n/g, ' ')}: _________________________</span></li>`;
+            answerItems += `<li><span class="inline-content">${item.answer}</span></li>`;
+        } else {
+            quizItems += `<li><span class="inline-content">${item.answer}: _________________________</span></li>`;
+            answerItems += `<li><span class="inline-content">${item.explanation.replace(/\n/g, ' ')}</span></li>`;
+        }
+    });
+    const bodyContent = `<h2>問題用紙</h2><ol class="list-container">${quizItems}</ol><div class="answer-key"><h2>解答</h2><ol class="list-container">${answerItems}</ol></div>`;
+    openPrintWindow(bodyContent, '重要語句テスト (混合)');
+    pdfModal.classList.add('hidden');
+});
+
+
+document.getElementById('download-sentence-quiz-btn').addEventListener('click', () => {
+    const items = getSelectedItems();
+    if (!items) return;
+    
+    const quizItems = items.map((item, index) => {
+        const wordInSentence = findAnswerFormInSentence(item.en, item.answer);
+        let blankedSentence = item.en;
+        
+        if (wordInSentence) {
+             // 例文中に単語が見つかった場合のみ置換
+             blankedSentence = item.en.replace(wordInSentence, '_______________');
+        }
+
+        // 修正: （ヒント: ...）を削除し、日本語訳のみを表示
+        // 同列に表示するため span.inline-content を使用
+        return `<li><span class="inline-content">${blankedSentence}</span><br>${item.ja}</li>`;
+    }).join('');
+    const answerItems = items.map((item) => `<li><span class="inline-content">${findAnswerFormInSentence(item.en, item.answer)}</span></li>`).join('');
+    const bodyContent = `<h2>問題用紙</h2><ol>${quizItems}</ol><div class="answer-key"><h2>解答</h2><ol class="list-container">${answerItems}</ol></div>`;
+    openPrintWindow(bodyContent, '重要語句テスト (例文穴埋め)');
+    pdfModal.classList.add('hidden');
+});
+
+document.getElementById('download-sentence-mixed-quiz-btn').addEventListener('click', () => {
+    const items = getSelectedItems();
+    if (!items) return;
+
+    let quizItems = '';
+    let answerItems = '';
+    
+    const instructionText = '英語を答える問題は文脈に従ってヒントをもとに英語を、日本語を答える問題は英文の下線部の部分を日本語に直しなさい。';
+    const generalInstruction = `<p style="text-align: left; border: 1px solid #ccc; padding: 10px; margin-bottom: 20px;">${instructionText}</p>`;
+
+    items.forEach((item) => {
+        const wordInSentence = findAnswerFormInSentence(item.en, item.answer);
+        if (Math.random() > 0.5) {
+            // 穴埋め問題
+            let blankedSentence = item.en;
+            if (wordInSentence) {
+                blankedSentence = item.en.replace(wordInSentence, '_______________');
             }
-
-            // Explanation Section
-            let explanationHtml = '';
-            if (state.showExplanation) {
-                explanationHtml = `
-                    <div class="rounded-2xl p-8 mb-8 animate-fade-in shadow-lg ${isCorrect ? 'bg-green-50 border-2 border-green-200' : 'bg-red-50 border-2 border-red-200'}">
-                        <div class="flex items-center gap-4 mb-6 pb-4 border-b border-black/5">
-                            ${isCorrect ? '<i data-lucide="check-circle" class="text-green-600" width="40" height="40"></i>' : '<i data-lucide="x-circle" class="text-red-600" width="40" height="40"></i>'}
-                            <h3 class="text-3xl font-black ${isCorrect ? 'text-green-800' : 'text-red-800'}">
-                                ${isCorrect ? "Correct!" : "Nice try!"}
-                            </h3>
-                        </div>
-                        <div class="space-y-6">
-                            <div class="bg-white/80 p-5 rounded-xl border border-blue-100 shadow-sm">
-                                <div class="flex items-center gap-3 text-blue-700 font-bold mb-2">
-                                    <i data-lucide="book-open" width="24"></i>
-                                    <span class="text-xl">Grammar Point: ${currentQ.grammarPoint}</span>
-                                </div>
-                                <p class="text-lg text-gray-700 leading-relaxed font-medium">${currentQ.grammarExplanation}</p>
-                            </div>
-                            <div class="bg-white/80 p-5 rounded-xl border-l-8 border-yellow-400 shadow-sm">
-                                <div class="flex items-center gap-3 text-yellow-700 font-bold mb-3">
-                                    <i data-lucide="map-pin" width="24"></i>
-                                    <span class="text-xl">Taiwan Trivia</span>
-                                </div>
-                                <p class="text-lg text-gray-800 mb-4 leading-relaxed font-medium">${currentQ.trivia}</p>
-                                ${currentQ.link ? `
-                                    <div class="text-right">
-                                        <a href="${currentQ.link}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-2 text-lg text-blue-600 hover:underline hover:text-blue-800 transition-colors font-bold bg-blue-50 px-4 py-2 rounded-lg">
-                                            <i data-lucide="external-link" width="20"></i> ${currentQ.linkText || "参考サイトを見る"}
-                                        </a>
-                                    </div>
-                                ` : ''}
-                            </div>
-                        </div>
-                        <button onclick="nextQuestion()" class="mt-8 w-full py-4 bg-gray-800 text-white rounded-xl font-bold text-xl hover:bg-gray-700 transition-colors flex justify-center items-center gap-3 shadow-lg transform hover:scale-[1.01] cursor-pointer">
-                            ${state.currentQuestionIndex < questions.length - 1 ? "Next Question" : "See Results"} <i data-lucide="chevron-right" width="24"></i>
-                        </button>
-                    </div>
-                `;
+            // 修正: （ヒント: ...）を削除し、日本語訳のみを表示
+            quizItems += `<li><span class="inline-content">${blankedSentence}</span><br>${item.ja}</li>`;
+            answerItems += `<li><span class="inline-content">${wordInSentence || item.answer}</span></li>`; // 見つからなければベースアンサー
+        } else {
+            // 和訳問題
+            let underlinedSentence = item.en;
+            if (wordInSentence) {
+                 underlinedSentence = item.en.replace(wordInSentence, `<u>${wordInSentence}</u>`);
             }
+            quizItems += `<li><span class="inline-content">${underlinedSentence}</span><br>_________________________</li>`;
+            answerItems += `<li><span class="inline-content">${item.ja}</span></li>`;
+        }
+    });
 
-            return `
-                <div class="flex flex-col h-full max-w-3xl mx-auto p-4 overflow-y-auto pb-32">
-                    <div class="flex justify-between items-center mb-6">
-                        <button onclick="goHome()" class="p-2 bg-gray-100 rounded-full hover:bg-gray-200 text-gray-600 transition-colors cursor-pointer" title="ホームに戻る">
-                            <i data-lucide="home" width="28"></i>
-                        </button>
-                        <div class="flex items-center gap-3 text-gray-600">
-                            <span class="text-2xl font-black text-red-600">Q${state.currentQuestionIndex + 1}</span>
-                            <span class="text-xl font-bold text-gray-400">/ ${questions.length}</span>
-                        </div>
-                    </div>
-                    <div class="flex justify-center mb-6">
-                        <span class="text-lg font-bold bg-red-100 text-red-800 px-6 py-2 rounded-full border border-red-200 shadow-sm">${currentQ.category}</span>
-                    </div>
-                    <div class="w-full bg-gray-200 rounded-full h-3 mb-8">
-                        <div class="bg-red-600 h-3 rounded-full transition-all duration-500" style="width: ${progress}%"></div>
-                    </div>
-                    
-                    <div class="bg-white rounded-2xl shadow-lg p-8 mb-8 border-l-8 border-red-500">
-                        <h3 class="text-2xl font-bold text-gray-800 mb-4 leading-normal">${currentQ.question}</h3>
-                        ${state.isAnswered ? `<p class="text-gray-500 text-lg mb-6 font-medium bg-gray-50 p-2 rounded-lg inline-block animate-fade-in border border-gray-200">日本語: ${currentQ.japanese}</p>` : ''}
-                        
-                        <div class="text-3xl font-medium text-center py-10 bg-gray-50 rounded-xl border-2 border-gray-200 text-gray-700 leading-relaxed shadow-inner">
-                            <div class="mb-6">
-                                ${currentQ.sentencePart1}
-                                <span class="inline-block min-w-[120px] border-b-4 border-red-400 text-red-600 px-2 mx-2 font-bold bg-white rounded px-2">
-                                    ${state.isAnswered ? currentQ.correctAnswer : "________"}
-                                </span>
-                                <br class="lg:hidden" />
-                                ${currentQ.sentencePart2}
-                            </div>
-                            ${recordingControls}
-                        </div>
-                    </div>
+    const bodyContent = `<h2>問題用紙</h2>${generalInstruction}<ol>${quizItems}</ol><div class="answer-key"><h2>解答</h2><ol class="list-container">${answerItems}</ol></div>`;
+    openPrintWindow(bodyContent, '重要語句テスト (例文混合)');
+    pdfModal.classList.add('hidden');
+});
 
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-                        ${optionsHtml}
-                    </div>
 
-                    ${explanationHtml}
-                </div>
-            `;
-        };
-
-        const renderResultScreen = () => {
-            const percentage = (state.score / questions.length) * 100;
-            let msg = "Keep Trying! 伸び代があります！";
-            if (percentage === 100) msg = "Perfect! 台湾マスターです！";
-            else if (percentage >= 80) msg = "Great Job! 修学旅行が楽しみですね。";
-            else if (percentage >= 60) msg = "Good! しっかり復習しておきましょう。";
-
-            return `
-                <div class="flex flex-col items-center justify-center h-full p-8 text-center bg-gradient-to-b from-white to-red-50 overflow-y-auto">
-                    <i data-lucide="award" class="text-yellow-500 mb-8 drop-shadow-lg mt-10" width="100" height="100"></i>
-                    <h2 class="text-4xl font-black text-gray-800 mb-4">Quiz Completed!</h2>
-                    <p class="text-xl text-gray-500 mb-10 font-bold">お疲れ様でした！</p>
-                    
-                    <div class="bg-white p-10 rounded-3xl shadow-2xl mb-12 w-full max-w-md border border-gray-100">
-                        <p class="text-gray-600 text-2xl mb-4 font-bold">Your Score</p>
-                        <div class="text-8xl font-black text-red-600 mb-4 tracking-tighter">
-                            ${state.score}<span class="text-4xl text-gray-400 font-bold ml-2">/${questions.length}</span>
-                        </div>
-                        <div class="w-full bg-gray-100 rounded-full h-4 mb-6">
-                            <div class="bg-red-500 h-4 rounded-full shadow-sm" style="width: ${percentage}%"></div>
-                        </div>
-                        <p class="text-xl text-gray-800 font-bold">${msg}</p>
-                    </div>
-
-                    <div class="flex flex-col gap-4 w-full max-w-xs">
-                        <button onclick="startQuiz()" class="px-8 py-4 bg-red-600 text-white font-bold text-xl rounded-xl hover:bg-red-700 transition-transform transform hover:scale-105 flex justify-center items-center gap-3 shadow-lg cursor-pointer">
-                            <i data-lucide="refresh-cw" width="24"></i> もう一度挑戦
-                        </button>
-                        <button onclick="goHome()" class="px-8 py-4 bg-white text-gray-700 border-2 border-gray-300 font-bold text-xl rounded-xl hover:bg-gray-50 transition-colors flex justify-center items-center gap-3 cursor-pointer">
-                            <i data-lucide="home" width="24"></i> ホームに戻る
-                        </button>
-                    </div>
-                </div>
-            `;
-        };
-
-        const render = () => {
-            if (state.currentScreen === 'start') {
-                appDiv.innerHTML = renderStartScreen();
-            } else if (state.currentScreen === 'quiz') {
-                appDiv.innerHTML = renderQuizScreen();
-            } else if (state.currentScreen === 'result') {
-                appDiv.innerHTML = renderResultScreen();
-            }
-            // Initialize Icons
-            lucide.createIcons();
-        };
-
-        // Initial Render
-        render();
-
-    </script>
+// --- Initial Load ---
+document.addEventListener('DOMContentLoaded', () => {
+    // データを直接埋め込んだため、renderChapter() を呼び出すだけ
+    renderChapter();
+});
+</script>
 </body>
 </html>
